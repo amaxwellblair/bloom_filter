@@ -1,43 +1,30 @@
 require 'pry'
-require 'digest'
 
 class BloomFilter
-  attr_reader :binary_vector, :set, :size
+  attr_reader :bit_vector, :size, :digests
 
-  def initialize(size = 10)
-    @size = size
-    @set = 0
+  def initialize(args = {})
+    @size = args.fetch(:size, 10)
+    @bit_vector = 0
+    @digests = args[:digests]
   end
 
   def insert(key)
     digesters(key).each do |index|
-      @set = set | ("1" + "0"*(index)).to_i(2)
+      @bit_vector = bit_vector | 2**(index)
     end
   end
 
   def in_set?(key)
-    digesters(key).map do |index|
-      set & (("1" + "0"*(index)).to_i(2))
-    end.all?{ |bool| bool != 0}
+    digesters(key).each do |index|
+      return false if (bit_vector & 2**(index)) == 0
+    end
+    true
   end
 
   def digesters(key)
-    d1 = digest_md5(key) % size
-    d2 = digest_SHA1(key) % size
-    d3 = digest_SHA2(key) % size
-    [d1, d2, d3]
+    digests.map do |digest|
+      digest.hexdigest(key).to_i(16) % size
+    end
   end
-
-  def digest_md5(key)
-    Digest::MD5.hexdigest(key).to_i(16)
-  end
-
-  def digest_SHA1(key)
-    Digest::SHA1.hexdigest(key).to_i(16)
-  end
-
-  def digest_SHA2(key)
-    Digest::SHA2.hexdigest(key).to_i(16)
-  end
-
 end
