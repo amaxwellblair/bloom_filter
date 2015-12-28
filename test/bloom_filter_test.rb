@@ -12,7 +12,7 @@ class BloomFilterTest < Minitest::Test
 
   def test_intitialize
     bloomie = BloomFilter.new(3)
-    assert_equal "000", bloomie.binary_vector
+    assert_equal 0, bloomie.set
   end
 
   def test_insert

@@ -2,30 +2,30 @@ require 'pry'
 require 'digest'
 
 class BloomFilter
-  attr_reader :binary_vector
+  attr_reader :binary_vector, :set, :size
 
   def initialize(size = 10)
-    @binary_vector = '' + "0"*size
+    @size = size
+    @set = 0
   end
 
   def insert(key)
-    d1 = digest_md5(key) % binary_vector.length
-    d2 = digest_SHA1(key) % binary_vector.length
-    d3 = digest_SHA2(key) % binary_vector.length
-
-    binary_vector[d1] = 1.to_s
-    binary_vector[d2] = 1.to_s
-    binary_vector[d3] = 1.to_s
+    digesters(key).each do |index|
+      @set = set | ("1" + "0"*(index)).to_i(2)
+    end
   end
 
   def in_set?(key)
-    d1 = digest_md5(key) % binary_vector.length
-    d2 = digest_SHA1(key) % binary_vector.length
-    d3 = digest_SHA2(key) % binary_vector.length
+    digesters(key).map do |index|
+      set & (("1" + "0"*(index)).to_i(2))
+    end.all?{ |bool| bool != 0}
+  end
 
-    [binary_vector[d1], binary_vector[d2], binary_vector[d3]].all? do |bool|
-      bool == "1"
-    end
+  def digesters(key)
+    d1 = digest_md5(key) % size
+    d2 = digest_SHA1(key) % size
+    d3 = digest_SHA2(key) % size
+    [d1, d2, d3]
   end
 
   def digest_md5(key)
@@ -39,7 +39,5 @@ class BloomFilter
   def digest_SHA2(key)
     Digest::SHA2.hexdigest(key).to_i(16)
   end
-
-
 
 end
